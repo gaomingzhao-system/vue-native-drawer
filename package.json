@@ -1,0 +1,97 @@
+{
+  "name": "vue-native-drawer",
+  "version": "0.1.0",
+  "description": "A native iOS-style drawer (bottom sheet) for Vue 3.6 Vapor mode, with snap points and momentum gestures.",
+  "keywords": [
+    "bottom-sheet",
+    "drawer",
+    "gesture",
+    "ios",
+    "sheet",
+    "snap-points",
+    "vapor",
+    "vue"
+  ],
+  "homepage": "https://github.com/gaomingzhao-system/vue-native-drawer#readme",
+  "bugs": {
+    "url": "https://github.com/gaomingzhao-system/vue-native-drawer/issues"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/gaomingzhao-system/vue-native-drawer.git"
+  },
+  "files": [
+    "dist"
+  ],
+  "type": "module",
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "main": "./dist/index.js",
+  "module": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "default": "./dist/index.js"
+    },
+    "./style.css": "./dist/style.css"
+  },
+  "scripts": {
+    "dev": "vite playground",
+    "build": "vite build && npm run build:types",
+    "build:types": "node scripts/vue-tsc.mjs -p tsconfig.build.json",
+    "build:playground": "vite build playground",
+    "preview": "vite preview playground",
+    "typecheck": "tsc -p tsconfig.node.json && node scripts/vue-tsc.mjs -p tsconfig.app.json",
+    "lint": "oxlint",
+    "lint:fix": "oxlint --fix",
+    "format": "oxfmt",
+    "format:check": "oxfmt --check",
+    "test": "vitest run",
+    "test:unit": "vitest run --project unit",
+    "test:browser": "vitest run --project browser",
+    "test:e2e": "playwright test",
+    "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build"
+  },
+  "dependencies": {
+    "@vueuse/core": "^15.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^24.19.2",
+    "@typescript/typescript6": "^6.0.2",
+    "@vitejs/plugin-vue": "^6.0.10",
+    "@vitest/browser-playwright": "^5.0.5",
+    "oxfmt": "^0.75.0",
+    "oxlint": "^1.90.0",
+    "playwright": "^1.64.1",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "vitest": "^5.0.5",
+    "vue": "^3.6.0-rc.13",
+    "vue-tsc": "^3.3.13"
+  },
+  "peerDependencies": {
+    "vue": "^3.6.0-rc.13"
+  },
+  "overrides": {
+    "@vueuse/core": {
+      "vue": "$vue"
+    },
+    "@vueuse/shared": {
+      "vue": "$vue"
+    }
+  },
+  "devEngines": {
+    "packageManager": {
+      "name": "npm",
+      "onFail": "warn"
+    },
+    "runtime": {
+      "name": "node",
+      "version": "^24.22.1",
+      "onFail": "warn"
+    }
+  }
+}
