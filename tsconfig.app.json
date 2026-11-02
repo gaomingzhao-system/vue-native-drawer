@@ -4,6 +4,9 @@
     "module": "ESNext",
     "moduleResolution": "bundler",
     "moduleDetection": "force",
+    // The playground imports the library by its package name, like the Vite alias does. Without
+    // this, TypeScript finds the package through its own `exports` and needs a built `dist/`.
+    "paths": { "vue-native-drawer": ["./src/index.ts"] },
     "lib": ["ESNext", "DOM", "DOM.Iterable"],
     "types": ["vite/client"],
     "jsx": "preserve",
