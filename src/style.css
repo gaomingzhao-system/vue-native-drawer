@@ -1,0 +1,252 @@
+/*
+ * vue-native-drawer
+ *
+ * Theme it with these custom properties (set them on `.vnd-drawer` or any ancestor):
+ *
+ *   --vnd-background        drawer background
+ *   --vnd-color             drawer text color
+ *   --vnd-muted-color       description text color
+ *   --vnd-radius            corner radius
+ *   --vnd-shadow            drawer shadow
+ *   --vnd-gap               space between a fully open top/bottom drawer and the far screen edge
+ *   --vnd-max-width         maximum width of top/bottom drawers (they are centered)
+ *   --vnd-width             width of left/right drawers
+ *   --vnd-padding           padding of the content area
+ *   --vnd-handle-color      color of the grab handle
+ *   --vnd-overlay-color     overlay color
+ *   --vnd-backdrop-color    color behind the page when `scale-background` pushes it back
+ *   --vnd-z-index           stacking order of the overlay and drawer
+ */
+
+.vnd-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: var(--vnd-z-index, 50);
+  background: var(--vnd-overlay-color, rgb(0 0 0 / 0.4));
+  opacity: 0;
+  touch-action: none;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vnd-drawer {
+  position: fixed;
+  z-index: var(--vnd-z-index, 50);
+  display: flex;
+  flex-direction: column;
+  box-sizing: border-box;
+  background: var(--vnd-background, light-dark(#fff, #1c1c1e));
+  color: var(--vnd-color, inherit);
+  box-shadow: var(--vnd-shadow, 0 0 0 0.5px rgb(0 0 0 / 0.06), 0 0 24px rgb(0 0 0 / 0.12));
+  outline: none;
+  touch-action: none;
+  will-change: transform;
+  -webkit-tap-highlight-color: transparent;
+}
+
+.vnd-drawer[data-dragging] {
+  cursor: grabbing;
+  user-select: none;
+}
+
+/* Fills the space the drawer uncovers when it is pulled past its edge. */
+.vnd-drawer::after {
+  content: '';
+  position: absolute;
+  background: inherit;
+  pointer-events: none;
+}
+
+/* Bottom */
+
+.vnd-drawer[data-direction='bottom'] {
+  inset: auto 0 0;
+  height: calc(100% - var(--vnd-gap, 1.5rem) - env(safe-area-inset-top, 0px));
+  max-width: var(--vnd-max-width, 100%);
+  margin-inline: auto;
+  padding-bottom: env(safe-area-inset-bottom, 0px);
+  border-radius: var(--vnd-radius, 12px) var(--vnd-radius, 12px) 0 0;
+  transform: translate3d(0, 100%, 0);
+  transform-origin: 50% 0;
+}
+
+.vnd-drawer[data-direction='bottom']::after {
+  top: 100%;
+  right: 0;
+  left: 0;
+  height: 100%;
+}
+
+/* Top */
+
+.vnd-drawer[data-direction='top'] {
+  inset: 0 0 auto;
+  height: calc(100% - var(--vnd-gap, 1.5rem) - env(safe-area-inset-bottom, 0px));
+  max-width: var(--vnd-max-width, 100%);
+  margin-inline: auto;
+  padding-top: env(safe-area-inset-top, 0px);
+  border-radius: 0 0 var(--vnd-radius, 12px) var(--vnd-radius, 12px);
+  transform: translate3d(0, -100%, 0);
+  transform-origin: 50% 100%;
+}
+
+.vnd-drawer[data-direction='top']::after {
+  right: 0;
+  bottom: 100%;
+  left: 0;
+  height: 100%;
+}
+
+.vnd-drawer[data-direction='bottom'][data-fit],
+.vnd-drawer[data-direction='top'][data-fit] {
+  height: auto;
+  max-height: calc(100% - var(--vnd-gap, 1.5rem) - env(safe-area-inset-top, 0px));
+}
+
+/* Left */
+
+.vnd-drawer[data-direction='left'] {
+  inset: 0 auto 0 0;
+  width: var(--vnd-width, min(85%, 24rem));
+  padding-left: env(safe-area-inset-left, 0px);
+  border-radius: 0 var(--vnd-radius, 12px) var(--vnd-radius, 12px) 0;
+  transform: translate3d(-100%, 0, 0);
+  transform-origin: 100% 50%;
+}
+
+.vnd-drawer[data-direction='left']::after {
+  top: 0;
+  right: 100%;
+  bottom: 0;
+  width: 100%;
+}
+
+/* Right */
+
+.vnd-drawer[data-direction='right'] {
+  inset: 0 0 0 auto;
+  width: var(--vnd-width, min(85%, 24rem));
+  padding-right: env(safe-area-inset-right, 0px);
+  border-radius: var(--vnd-radius, 12px) 0 0 var(--vnd-radius, 12px);
+  transform: translate3d(100%, 0, 0);
+  transform-origin: 0 50%;
+}
+
+.vnd-drawer[data-direction='right']::after {
+  top: 0;
+  bottom: 0;
+  left: 100%;
+  width: 100%;
+}
+
+.vnd-drawer[data-direction='left'][data-fit],
+.vnd-drawer[data-direction='right'][data-fit] {
+  width: auto;
+  max-width: calc(100% - var(--vnd-gap, 1.5rem));
+}
+
+/* Handle */
+
+.vnd-handle {
+  position: relative;
+  display: flex;
+  flex: none;
+  align-items: center;
+  justify-content: center;
+  height: 1.25rem;
+  cursor: grab;
+  touch-action: none;
+}
+
+.vnd-handle::before {
+  content: '';
+  width: 2.25rem;
+  height: 0.3125rem;
+  border-radius: 999px;
+  background: var(--vnd-handle-color, light-dark(rgb(60 60 67 / 0.3), rgb(235 235 245 / 0.3)));
+}
+
+.vnd-drawer[data-direction='top'] > .vnd-handle {
+  order: 1;
+}
+
+.vnd-drawer[data-direction='left'] > .vnd-handle,
+.vnd-drawer[data-direction='right'] > .vnd-handle {
+  position: absolute;
+  top: 0;
+  bottom: 0;
+  width: 1.25rem;
+  height: auto;
+}
+
+.vnd-drawer[data-direction='left'] > .vnd-handle {
+  right: 0;
+}
+
+.vnd-drawer[data-direction='right'] > .vnd-handle {
+  left: 0;
+}
+
+.vnd-drawer[data-direction='left'] > .vnd-handle::before,
+.vnd-drawer[data-direction='right'] > .vnd-handle::before {
+  width: 0.3125rem;
+  height: 2.25rem;
+}
+
+/* Header */
+
+.vnd-header {
+  flex: none;
+  padding: 1rem 1rem 0.75rem;
+}
+
+.vnd-drawer[data-direction='bottom'] > .vnd-handle + .vnd-header {
+  padding-top: 0.25rem;
+}
+
+.vnd-title {
+  margin: 0;
+  font-size: 1.0625rem;
+  font-weight: 600;
+  line-height: 1.3;
+}
+
+.vnd-description {
+  margin: 0.25rem 0 0;
+  color: var(--vnd-muted-color, light-dark(rgb(60 60 67 / 0.6), rgb(235 235 245 / 0.6)));
+  font-size: 0.9375rem;
+  line-height: 1.4;
+}
+
+/* Content */
+
+.vnd-content {
+  flex: 1 1 auto;
+  min-height: 0;
+  padding: var(--vnd-padding, 0 1rem 1rem);
+  overflow: hidden;
+  overscroll-behavior: contain;
+}
+
+/* Content scrolls once the drawer is fully expanded, or always when it moves sideways. */
+.vnd-drawer[data-expanded] > .vnd-content,
+.vnd-drawer[data-direction='left'] > .vnd-content,
+.vnd-drawer[data-direction='right'] > .vnd-content {
+  overflow-y: auto;
+}
+
+/* Footer */
+
+.vnd-footer {
+  position: relative;
+  z-index: 1;
+  flex: none;
+  padding: 0.75rem 1rem;
+  background: inherit;
+}
+
+/* Page pushed back by `scale-background`. */
+
+html[data-vnd-scaled],
+html[data-vnd-scaled] body {
+  background-color: var(--vnd-backdrop-color, #000);
+}
