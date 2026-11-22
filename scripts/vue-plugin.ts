@@ -7,8 +7,8 @@ import vue from '@vitejs/plugin-vue'
  * Vue's SFC compiler reads files through TypeScript's `ts.sys` to resolve prop types imported
  * from other files. TypeScript 7 no longer exposes it, so the compiler gets Node's file system.
  */
-export function vuePlugin() {
-  return vue({
+export const vuePlugin = () =>
+  vue({
     script: {
       fs: {
         fileExists: existsSync,
@@ -17,4 +17,3 @@ export function vuePlugin() {
       },
     },
   })
-}

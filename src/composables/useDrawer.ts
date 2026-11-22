@@ -80,7 +80,7 @@ interface Gesture {
  * Positions are offsets: how far (px) the drawer is moved towards its edge. `0` is fully open
  * and the drawer's size is closed, whatever the direction.
  */
-export function useDrawer(options: UseDrawerOptions) {
+export const useDrawer = (options: UseDrawerOptions) => {
   const { open, snapPoint } = options
 
   const mounted = ref(false)
@@ -98,8 +98,17 @@ export function useDrawer(options: UseDrawerOptions) {
     return list.length > 0 ? list : [1]
   })
   const offsets = computed(() => getSnapOffsets(points.value, size.value))
-  const openOffset = computed(() => Math.min(...offsets.value))
-  const lowestOffset = computed(() => Math.max(...offsets.value))
+  // Sorting belongs to snap-point/size changes, never to pointer movement.
+  const sortedOffsets = computed(() => offsets.value.toSorted((a, b) => a - b))
+  const openOffset = computed(() => sortedOffsets.value[0] ?? 0)
+  const lowestOffset = computed(() => sortedOffsets.value.at(-1) ?? 0)
+  const overlayRange = computed(() => {
+    const list = offsets.value
+    const index = clamp(Math.round(options.fadeFrom()), 0, list.length - 1)
+    const full = list[index] ?? 0
+    const none = index > 0 ? (list[index - 1] ?? size.value) : size.value
+    return { full, none, distance: none - full }
+  })
   const activeIndex = ref(Math.max(findSnapIndex(points.value, snapPoint.value), 0))
   const activeSnapPoint = computed(() => points.value[activeIndex.value] ?? points.value[0]!)
   const expanded = computed(() => (offsets.value[activeIndex.value] ?? 0) <= openOffset.value + 0.5)
@@ -123,6 +132,7 @@ export function useDrawer(options: UseDrawerOptions) {
   let footerRange = 0
   let gesture: Gesture | null = null
   let stopAnimation: (() => void) | null = null
+  let stopClickSuppression: (() => void) | null = null
   let releaseScroll: (() => void) | null = null
   let returnFocus: HTMLElement | null = null
   let scaled = false
@@ -130,7 +140,7 @@ export function useDrawer(options: UseDrawerOptions) {
   let closeSpeed = 0
 
   provide(DRAWER, {
-    nest(progress, transition) {
+    nest: (progress, transition) => {
       nested = progress
       const panel = options.panel.value
       if (!panel || phase === 'closed') return
@@ -143,7 +153,7 @@ export function useDrawer(options: UseDrawerOptions) {
 
   const scalesBackground = () => !parent && !!options.scaleBackground()
 
-  function transform(offset: number): string {
+  const transform = (offset: number): string => {
     const shift = sign.value * (offset - NESTED_SHIFT * nested)
     const translate = vertical.value
       ? `translate3d(0, ${shift}px, 0)`
@@ -153,7 +163,7 @@ export function useDrawer(options: UseDrawerOptions) {
     return `${translate} scale(${1 - (NESTED_SHIFT / cross) * nested})`
   }
 
-  function render(offset: number, transition?: string) {
+  const render = (offset: number, transition?: string) => {
     position = offset
     const panel = options.panel.value
     if (!panel) return
@@ -178,31 +188,27 @@ export function useDrawer(options: UseDrawerOptions) {
   }
 
   /** 0 when closed, 1 from the smallest snap point on. */
-  function openProgress(offset: number): number {
+  const openProgress = (offset: number): number => {
     const range = size.value - lowestOffset.value
     return range > 0 ? clamp((size.value - offset) / range, 0, 1) : Number(offset < size.value)
   }
 
   /** The overlay fades in on the way from the snap point before `fadeFrom` to `fadeFrom`. */
-  function overlayOpacity(offset: number): number {
-    const list = offsets.value
-    const index = clamp(Math.round(options.fadeFrom()), 0, list.length - 1)
-    const full = list[index] ?? 0
-    const none = index > 0 ? (list[index - 1] ?? size.value) : size.value
-    if (none <= full) return Number(offset <= full)
-    return clamp((none - offset) / (none - full), 0, 1)
+  const overlayOpacity = (offset: number): number => {
+    const { full, none, distance } = overlayRange.value
+    return distance > 0 ? clamp((none - offset) / distance, 0, 1) : Number(offset <= full)
   }
 
   /** The page is pushed back on the way from the second largest snap point to the largest. */
-  function backgroundProgress(offset: number): number {
-    const [full = 0, from = size.value] = offsets.value.toSorted((a, b) => a - b)
+  const backgroundProgress = (offset: number): number => {
+    const [full = 0, from = size.value] = sortedOffsets.value
     return from > full ? clamp((from - offset) / (from - full), 0, 1) : Number(offset <= full)
   }
 
   // Animation
 
   /** Animate to `offset`. `speed` (px/ms, positive towards closed) is the speed to start at. */
-  function animate(offset: number, speed = 0, done?: () => void) {
+  const animate = (offset: number, speed = 0, done?: () => void) => {
     // Continue from wherever a running animation has got to.
     freeze()
     const panel = options.panel.value
@@ -238,7 +244,7 @@ export function useDrawer(options: UseDrawerOptions) {
   }
 
   /** Stop a running animation where it is. Returns whether one was running. */
-  function freeze(): boolean {
+  const freeze = (): boolean => {
     if (!stopAnimation) return false
     stopAnimation()
     const panel = options.panel.value
@@ -248,7 +254,7 @@ export function useDrawer(options: UseDrawerOptions) {
 
   // Opening and closing
 
-  async function show() {
+  const show = async () => {
     if (phase === 'open' || phase === 'opening') return
     const reopening = phase === 'closing'
     phase = 'opening'
@@ -271,13 +277,13 @@ export function useDrawer(options: UseDrawerOptions) {
     animate(offsets.value[activeIndex.value] ?? 0, 0, settle)
   }
 
-  function settle() {
+  const settle = () => {
     if (phase !== 'opening') return
     phase = 'open'
     options.onOpened()
   }
 
-  function hide(speed = 0) {
+  const hide = (speed = 0) => {
     if (phase === 'closed' || phase === 'closing') return
     endGesture()
     phase = 'closing'
@@ -286,7 +292,7 @@ export function useDrawer(options: UseDrawerOptions) {
     else finishClose()
   }
 
-  function finishClose() {
+  const finishClose = () => {
     phase = 'closed'
     ready = false
     teardown()
@@ -298,7 +304,7 @@ export function useDrawer(options: UseDrawerOptions) {
     options.onClosed()
   }
 
-  function setup() {
+  const setup = () => {
     pushDrawer(id)
     if (options.modal()) {
       releaseScroll = lockScroll()
@@ -315,7 +321,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function teardown() {
+  const teardown = () => {
     removeDrawer(id)
     releaseScroll?.()
     releaseScroll = null
@@ -335,7 +341,7 @@ export function useDrawer(options: UseDrawerOptions) {
   }
 
   /** Close the drawer, starting at `speed` (px/ms) after a release. */
-  function close(speed = 0) {
+  const close = (speed = 0) => {
     if (phase === 'closed' || phase === 'closing') return
     closeSpeed = speed
     open.value = false
@@ -349,7 +355,7 @@ export function useDrawer(options: UseDrawerOptions) {
 
   // Snapping
 
-  function setSnap(index: number, speed = 0) {
+  const setSnap = (index: number, speed = 0) => {
     const point = points.value[index]
     if (point === undefined) return
     activeIndex.value = index
@@ -360,12 +366,12 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function snapTo(point: SnapPoint) {
+  const snapTo = (point: SnapPoint) => {
     const index = findSnapIndex(points.value, point)
     if (index !== -1) setSnap(index)
   }
 
-  function measure() {
+  const measure = () => {
     const panel = options.panel.value
     if (!panel) return
     size.value = vertical.value ? panel.offsetHeight : panel.offsetWidth
@@ -376,7 +382,7 @@ export function useDrawer(options: UseDrawerOptions) {
 
   // Gestures
 
-  function onPointerDown(event: PointerEvent) {
+  const onPointerDown = (event: PointerEvent) => {
     if (gesture || !event.isPrimary || event.button > 0) return
     if (phase !== 'open' && phase !== 'opening') return
     const panel = options.panel.value
@@ -401,7 +407,7 @@ export function useDrawer(options: UseDrawerOptions) {
     window.addEventListener('pointercancel', onPointerCancel)
   }
 
-  function canGrab(target: Element, pointerType: string): boolean {
+  const canGrab = (target: Element, pointerType: string): boolean => {
     if (target.closest('[data-vnd-no-drag], select')) return false
     if (options.handleOnly() && !target.closest('.vnd-handle, [data-vnd-handle]')) return false
     // Let a mouse select text in fields instead of dragging the drawer.
@@ -418,14 +424,14 @@ export function useDrawer(options: UseDrawerOptions) {
   }
 
   /** Whether moving `main` px along the drag axis moves the drawer rather than its content. */
-  function wantsDrag(current: Gesture, main: number): boolean {
+  const wantsDrag = (current: Gesture, main: number): boolean => {
     // Content only scrolls once the drawer is (nearly) settled at its largest snap point.
     const settled = expanded.value && position <= openOffset.value + SCROLL_SLOP
     if (!settled || !current.scroller) return true
     return !canScroll(current.scroller, vertical.value, main > 0)
   }
 
-  function onPointerMove(event: PointerEvent) {
+  const onPointerMove = (event: PointerEvent) => {
     const current = gesture
     if (!current || event.pointerId !== current.pointerId) return
     const main = vertical.value ? event.clientY - current.y : event.clientX - current.x
@@ -447,7 +453,7 @@ export function useDrawer(options: UseDrawerOptions) {
 
   // Pointer events stop once the browser starts scrolling, so hold it back while a move may
   // still become a drag.
-  function onTouchMove(event: TouchEvent) {
+  const onTouchMove = (event: TouchEvent) => {
     const current = gesture
     if (!current || !event.cancelable) return
     if (current.dragging) {
@@ -463,7 +469,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function startDrag(current: Gesture, event: PointerEvent) {
+  const startDrag = (current: Gesture, event: PointerEvent) => {
     current.dragging = true
     dragging.value = true
     freeze()
@@ -480,7 +486,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function drag(offset: number) {
+  const drag = (offset: number) => {
     const dismissible = options.dismissible()
     const min = openOffset.value
     const max = dismissible ? size.value : lowestOffset.value
@@ -492,7 +498,39 @@ export function useDrawer(options: UseDrawerOptions) {
     options.onDrag(size.value ? clamp((size.value - next) / size.value, 0, 1) : 0)
   }
 
-  function onPointerUp(event: PointerEvent) {
+  /** Suppress only the pointer click immediately following a drag, for at most 100 ms. */
+  const suppressClick = (panel: HTMLElement, releasedAt: number) => {
+    stopClickSuppression?.()
+    let timer = 0
+    const disarm = () => {
+      window.removeEventListener('click', swallow, true)
+      window.removeEventListener('pointerdown', disarm, true)
+      window.clearTimeout(timer)
+      stopClickSuppression = null
+    }
+    const swallow = (event: MouseEvent) => {
+      disarm()
+      const elapsed = event.timeStamp - releasedAt
+      const target = event.target
+      if (
+        event.isTrusted &&
+        event.detail > 0 &&
+        elapsed >= 0 &&
+        elapsed < 100 &&
+        target instanceof Node &&
+        panel.contains(target)
+      ) {
+        event.preventDefault()
+        event.stopPropagation()
+      }
+    }
+    window.addEventListener('click', swallow, true)
+    window.addEventListener('pointerdown', disarm, true)
+    timer = window.setTimeout(disarm, 100)
+    stopClickSuppression = disarm
+  }
+
+  const onPointerUp = (event: PointerEvent) => {
     const current = gesture
     if (!current || event.pointerId !== current.pointerId) return
     endGesture()
@@ -506,7 +544,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function onPointerCancel(event: PointerEvent) {
+  const onPointerCancel = (event: PointerEvent) => {
     const current = gesture
     if (!current || event.pointerId !== current.pointerId) return
     endGesture()
@@ -515,13 +553,13 @@ export function useDrawer(options: UseDrawerOptions) {
   }
 
   /** Hand the gesture over to the content or the page. */
-  function cancelGesture() {
+  const cancelGesture = () => {
     const current = gesture
     endGesture()
     if (current?.interrupted) resume()
   }
 
-  function endGesture() {
+  const endGesture = () => {
     const current = gesture
     if (!current) return
     gesture = null
@@ -535,13 +573,13 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function resume() {
+  const resume = () => {
     if (phase === 'open' || phase === 'opening') {
       animate(offsets.value[activeIndex.value] ?? 0, 0, settle)
     }
   }
 
-  function release(speed: number) {
+  const release = (speed: number) => {
     const target = getReleaseTarget({
       offsets: offsets.value,
       closed: size.value,
@@ -554,13 +592,11 @@ export function useDrawer(options: UseDrawerOptions) {
     else setSnap(target.index, speed)
   }
 
-  function axis(event: PointerEvent): number {
-    return vertical.value ? event.clientY : event.clientX
-  }
+  const axis = (event: PointerEvent): number => (vertical.value ? event.clientY : event.clientX)
 
   // Keyboard and focus
 
-  function onKeydown(event: KeyboardEvent) {
+  const onKeydown = (event: KeyboardEvent) => {
     if (phase === 'closing' || !isTopDrawer(id)) return
     if (event.key === 'Escape') {
       if (!options.dismissible() || event.defaultPrevented) return
@@ -571,7 +607,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function trapTab(event: KeyboardEvent) {
+  const trapTab = (event: KeyboardEvent) => {
     const panel = options.panel.value
     if (!panel) return
     const focusable = getFocusable(panel)
@@ -593,7 +629,7 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function onFocusIn(event: FocusEvent) {
+  const onFocusIn = (event: FocusEvent) => {
     const panel = options.panel.value
     if (!panel || !options.modal() || phase === 'closing' || !isTopDrawer(id)) return
     if (event.target instanceof Node && !panel.contains(event.target)) {
@@ -601,12 +637,12 @@ export function useDrawer(options: UseDrawerOptions) {
     }
   }
 
-  function onOverlayClick() {
+  const onOverlayClick = () => {
     if (options.dismissible()) close()
   }
 
   /** A tap on the handle steps through the snap points. */
-  function onHandleClick() {
+  const onHandleClick = () => {
     const count = points.value.length
     if (count > 1) setSnap((activeIndex.value + 1) % count)
   }
@@ -645,6 +681,7 @@ export function useDrawer(options: UseDrawerOptions) {
   useEventListener(options.panel, 'touchmove', onTouchMove, { passive: false })
 
   onBeforeUnmount(() => {
+    stopClickSuppression?.()
     endGesture()
     stopAnimation?.()
     if (phase !== 'closed') {
@@ -669,31 +706,4 @@ export function useDrawer(options: UseDrawerOptions) {
     onOverlayClick,
     onHandleClick,
   }
-}
-
-/**
- * Swallow the click a drag of `panel` ends with, so releasing over a button does not press it.
- * Only that click goes: a real one, inside the drawer, right after the release at `releasedAt`.
- * The next click or press disarms it.
- */
-function suppressClick(panel: HTMLElement, releasedAt: number) {
-  const disarm = () => {
-    window.removeEventListener('click', swallow, true)
-    window.removeEventListener('pointerdown', disarm, true)
-  }
-  const swallow = (event: MouseEvent) => {
-    disarm()
-    const target = event.target
-    if (
-      event.isTrusted &&
-      event.timeStamp - releasedAt < 100 &&
-      target instanceof Node &&
-      panel.contains(target)
-    ) {
-      event.preventDefault()
-      event.stopPropagation()
-    }
-  }
-  window.addEventListener('click', swallow, true)
-  window.addEventListener('pointerdown', disarm, true)
 }

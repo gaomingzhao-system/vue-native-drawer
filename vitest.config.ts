@@ -1,4 +1,4 @@
-import { playwright } from '@vitest/browser-playwright'
+import { defineBrowserCommand, playwright } from '@vitest/browser-playwright'
 import { defineConfig } from 'vitest/config'
 import { vuePlugin } from './scripts/vue-plugin.ts'
 
@@ -25,8 +25,17 @@ export default defineConfig({
           browser: {
             enabled: true,
             headless: true,
-            provider: playwright({ launchOptions: { executablePath } }),
-            instances: [{ browser: 'chromium' }],
+            provider: playwright(),
+            instances: [
+              { browser: 'chromium', provider: playwright({ launchOptions: { executablePath } }) },
+              { browser: 'firefox' },
+              { browser: 'webkit' },
+            ],
+            commands: {
+              setReducedMotion: defineBrowserCommand(({ page }, reduce: boolean) =>
+                page.emulateMedia({ reducedMotion: reduce ? 'reduce' : 'no-preference' }),
+              ),
+            },
             viewport: { width: 390, height: 844 },
           },
         },

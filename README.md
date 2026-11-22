@@ -1,6 +1,6 @@
 # vue-native-drawer
 
-A drawer for the web that moves like a native iOS sheet, built for **Vue 3.6 Vapor mode**.
+A drawer for the web that moves like a native iOS sheet, built for **Vue 3.5**.
 
 It opens from the bottom at a third of the screen. Drag it up to half and full height, flick it
 to skip ahead, or drag it down to close. The drag follows your finger 1:1, a release keeps its
@@ -12,8 +12,7 @@ momentum, and pulling past the edge rubber-bands like UIKit.
   UIKit's sheet curve, rubber banding, and a page that steps back like a stack of cards.
 - **Gesture aware.** Content scrolls once the drawer is fully open, and drags the drawer while it
   isn't. Horizontal swipes, text fields and `data-vnd-no-drag` areas are left alone.
-- **Vapor first.** Written with `<script setup vapor>`. It works in Vapor apps and in regular apps
-  with `vaporInteropPlugin`.
+- **Standard Vue.** Written with `<script setup>` and works with `createApp()` out of the box.
 - **Small.** Plain TypeScript and CSS. The only runtime dependency is VueUse.
 
 ## Install
@@ -22,23 +21,12 @@ momentum, and pulling past the edge rubber-bands like UIKit.
 npm install vue-native-drawer
 ```
 
-`vue` 3.6 or later is a peer dependency.
-
-> **Vue 3.6 pre-releases with npm:** VueUse declares `vue@^3.5.0` as its peer, and that range
-> doesn't include pre-releases such as `3.6.0-rc.13`. Until Vue 3.6 is stable, add an override to
-> your `package.json`:
->
-> ```json
-> "overrides": {
->   "@vueuse/core": { "vue": "$vue" },
->   "@vueuse/shared": { "vue": "$vue" }
-> }
-> ```
+`vue` 3.5 or later within Vue 3 is a peer dependency. Development and tests use Vue 3.5.46.
 
 ## Usage
 
 ```vue
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Drawer } from 'vue-native-drawer'
 import 'vue-native-drawer/style.css'
@@ -59,13 +47,13 @@ const open = ref(false)
 </template>
 ```
 
-Vapor apps (`createVaporApp`) can use the drawer as is. A regular (virtual DOM) app needs Vue's
-interop plugin to render Vapor components:
+Mount your application with Vue's standard renderer:
 
 ```ts
-import { createApp, vaporInteropPlugin } from 'vue'
+import { createApp } from 'vue'
+import App from './App.vue'
 
-createApp(App).use(vaporInteropPlugin).mount('#app')
+createApp(App).mount('#app')
 ```
 
 ## Snap points
@@ -106,7 +94,7 @@ from the smallest snap point to closed, or when it is flicked down from the smal
 | `dismissible`     | `boolean`                                | `true`                    | Whether dragging away, tapping the overlay or Escape close it.                                                                          |
 | `modal`           | `boolean`                                | `true`                    | Show an overlay, lock page scroll and keep focus in the drawer. Set to `false` to keep the page interactive.                            |
 | `fit`             | `boolean`                                | `false`                   | Size the drawer to its content instead of the full height.                                                                              |
-| `handle`          | `boolean`                                | `true` for top/bottom     | Show the grab handle. Tapping it steps through the snap points.                                                                         |
+| `handle`          | `boolean`                                | `true` for top/bottom     | Show the grab handle. Clicking it or pressing Enter/Space steps through the snap points.                                                |
 | `handleOnly`      | `boolean`                                | `false`                   | Only drag from the handle, or from elements with `data-vnd-handle`.                                                                     |
 | `fadeFrom`        | `number`                                 | `0`                       | Index of the snap point from which the overlay is fully visible. It fades in from the snap point before it.                             |
 | `scaleBackground` | `boolean \| string`                      | `false`                   | Push the page back like iOS while the drawer is expanded. `true` scales the element with `data-vnd-background`; a string is a selector. |
@@ -116,6 +104,8 @@ from the smallest snap point to closed, or when it is flicked down from the smal
 | `to`              | `string \| HTMLElement \| false`         | `'body'`                  | Teleport target. `false` renders the drawer in place.                                                                                   |
 
 Other attributes (`class`, `style`, `aria-*`, `data-*`, listeners) go to the drawer element.
+Explicit `aria-*` attributes take precedence over generated defaults. The inline custom properties
+`--vnd-overlay-color` and `--vnd-z-index` are also applied to the overlay.
 
 ### Models
 
@@ -174,8 +164,8 @@ The playground in [`playground/`](./playground) shows all of these. Run `npm run
 
 ## Styling
 
-The drawer comes with iOS-like styles that follow `color-scheme`. Theme it with custom properties
-on `.vnd-drawer` or any ancestor:
+The drawer comes with independent iOS-like CSS that follows `color-scheme`. Set panel custom
+properties on `.vnd-drawer` or an ancestor of the rendered panel:
 
 ```css
 .vnd-drawer {
@@ -184,6 +174,38 @@ on `.vnd-drawer` or any ancestor:
   --vnd-max-width: 40rem; /* center top and bottom drawers on large screens */
 }
 ```
+
+The overlay and panel are siblings. Properties set only on `.vnd-drawer` do not inherit into
+`.vnd-overlay`. Set overlay color on the overlay, and z-index on both elements or a shared ancestor:
+
+```css
+.vnd-overlay {
+  --vnd-overlay-color: rgb(20 25 40 / 0.55);
+}
+
+.vnd-overlay,
+.vnd-drawer {
+  --vnd-z-index: 100;
+}
+
+:root {
+  --vnd-backdrop-color: #111;
+}
+```
+
+For an individual drawer, inline overlay color and z-index are forwarded to its overlay:
+
+```vue
+<Drawer
+  v-model:open="open"
+  title="Nearby"
+  :style="{ '--vnd-overlay-color': 'rgb(20 25 40 / 0.55)', '--vnd-z-index': 100 }"
+/>
+```
+
+By default both elements are teleported to `body`, so a component's original wrapper is not a
+CSS ancestor. Use global styles, `:root`, or the actual Teleport target for inherited properties.
+`--vnd-backdrop-color` belongs on `:root` because it styles the document background.
 
 | Property               | Default             | Description                                                                               |
 | ---------------------- | ------------------- | ----------------------------------------------------------------------------------------- |
@@ -210,9 +232,26 @@ Add `data-vnd-no-drag` to an element to keep it from starting a drag, for exampl
 
 ## Accessibility
 
-A modal drawer is a `dialog` with `aria-modal`, labelled by `title` and `description`. Opening it
-moves focus into it, Tab and Shift+Tab stay inside, Escape closes it, and focus goes back to where
-it was when it closes. With `prefers-reduced-motion`, the drawer moves without animation.
+A modal drawer is a `dialog` with `aria-modal`. `title` names the dialog and `description`
+describes it. A custom `header` replaces their visible content; hidden text targets keep the
+provided title and description available to assistive technology. Alternatively, associate the
+custom header directly with explicit `aria-labelledby` and `aria-describedby`, or provide an
+`aria-label`. These attributes override the generated defaults:
+
+```vue
+<Drawer v-model:open="open" aria-labelledby="places-heading" aria-describedby="places-description">
+  <template #header>
+    <h2 id="places-heading">Nearby places</h2>
+    <p id="places-description">Choose a destination.</p>
+  </template>
+</Drawer>
+```
+
+Opening a modal drawer moves focus into it. Tab and Shift+Tab stay inside, Escape closes it,
+and focus returns to the previous element. The handle is a native button: Enter and Space
+cycle through snap points, with a visible keyboard focus indicator. A single-snap handle is
+marked `aria-disabled` and excluded from the tab order while remaining available for dragging.
+With `prefers-reduced-motion`, the drawer moves without animation.
 
 ## Browser support
 
@@ -232,13 +271,16 @@ npm run build        # dist/index.js, dist/style.css and type declarations
 npm run lint         # oxlint
 npm run format       # oxfmt
 npm run typecheck    # TypeScript 7 for .ts, vue-tsc for .vue
-npm test             # Vitest: unit tests in Node and component tests in Chromium
-npm run test:e2e     # Playwright: gestures on the playground, on a phone and on a desktop
+npm test             # Vitest: Node unit tests; Chromium, Firefox and WebKit component tests
+npm run test:e2e     # Playwright: Chromium phone/desktop gestures, Firefox and WebKit desktop
 npm run check        # lint, format check, typecheck, tests and build
 ```
 
-Browser tests need Playwright's Chromium (`npx playwright install chromium`). To use a Chromium
-that is already installed, set `PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome`.
+Browser tests need Playwright's browsers (`npx playwright install chromium firefox webkit`). To use
+a Chromium that is already installed, set `PLAYWRIGHT_CHROMIUM_PATH=/path/to/chrome`; Firefox and
+WebKit still use Playwright's bundled browsers. Component pointer tests run on all three engines.
+End-to-end touch gestures use Chromium's DevTools Protocol on the phone project; Firefox and
+WebKit exercise real mouse and keyboard interactions on desktop.
 
 Notes on the toolchain:
 
@@ -253,17 +295,17 @@ Notes on the toolchain:
 
 ```
 src/
-  Drawer.vue                 the component (<script setup vapor>)
+  Drawer.vue                 the component (<script setup>)
   composables/useDrawer.ts   gestures, snapping, animation and focus handling
   utils/                     snap math, velocity tracking, easing, scroll lock, page scaling
   style.css                  styles
-playground/                  demo app (createVaporApp)
+playground/                  demo app (createApp)
 test/unit/                   Vitest, Node
-test/browser/                Vitest browser mode, Chromium through Playwright
+test/browser/                Vitest browser mode, Chromium/Firefox/WebKit through Playwright
 e2e/                         Playwright, against the playground
 ```
 
 ## Credits
 
 Inspired by [vaul](https://github.com/emilkowalski/vaul) by Emil Kowalski and its Vue port
-[vaul-vue](https://github.com/unovue/vaul-vue), with a flat, Vapor-native API.
+[vaul-vue](https://github.com/unovue/vaul-vue), with a flat Vue component API.

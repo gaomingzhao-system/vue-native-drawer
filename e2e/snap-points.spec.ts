@@ -134,7 +134,9 @@ test.describe('dismissing', () => {
     const drawer = await openDemo(page, 'open-locked', 'drawer-locked')
     await page.keyboard.press('Escape')
     await page.mouse.click(20, 20)
-    await drag(page, drawer, 0, 250, slowly)
+    const height = (await drawer.boundingBox())!.height
+    // Exercise overdrag without releasing beyond the viewport in Firefox.
+    await drag(page, drawer, 0, height * 0.6, slowly)
     await expect(drawer).toHaveAttribute('data-state', 'open')
     await expectShare(drawer, 1)
     await page.getByTestId('locked-accept').click()

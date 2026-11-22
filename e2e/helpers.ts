@@ -21,18 +21,20 @@ export const quickly: DragOptions = { steps: 4, delay: 8, hold: 0 }
  * Protocol, so the browser scrolls and cancels exactly as it would for a real finger), with the
  * mouse otherwise.
  */
-export async function drag(
+export const drag = async (
   page: Page,
   locator: Locator,
   dx: number,
   dy: number,
   { from, steps = 10, delay = 16, hold = 0 }: DragOptions = {},
-) {
+) => {
   const box = await locator.boundingBox()
   if (!box) throw new Error('Nothing to drag')
   const x = box.x + (from?.x ?? box.width / 2)
   const y = box.y + (from?.y ?? 10)
-  const touch = await page.evaluate(() => navigator.maxTouchPoints > 0)
+  const touch =
+    page.context().browser()?.browserType().name() === 'chromium' &&
+    (await page.evaluate(() => navigator.maxTouchPoints > 0))
 
   if (touch) {
     const client = await page.context().newCDPSession(page)
@@ -74,20 +76,18 @@ export async function drag(
 }
 
 /** Visible share of a bottom drawer, from 0 to 1. */
-export function visibleShare(locator: Locator): Promise<number> {
-  return locator.evaluate(
+export const visibleShare = (locator: Locator): Promise<number> =>
+  locator.evaluate(
     (element: HTMLElement) =>
       (window.innerHeight - element.getBoundingClientRect().top) / element.offsetHeight,
   )
-}
 
 /** Wait until a bottom drawer rests with `share` of it visible. */
-export async function expectShare(locator: Locator, share: number) {
-  await expect.poll(() => visibleShare(locator)).toBeCloseTo(share, 2)
-}
+export const expectShare = (locator: Locator, share: number) =>
+  expect.poll(() => visibleShare(locator)).toBeCloseTo(share, 2)
 
 /** Open the demo behind `trigger` and wait until its drawer has settled. */
-export async function openDemo(page: Page, trigger: string, drawer: string) {
+export const openDemo = async (page: Page, trigger: string, drawer: string) => {
   const button = page.getByTestId(trigger)
   await button.scrollIntoViewIfNeeded()
   await button.click()
@@ -98,7 +98,7 @@ export async function openDemo(page: Page, trigger: string, drawer: string) {
 }
 
 /** Wait until `locator` stops moving. */
-export async function waitForRest(locator: Locator) {
+export const waitForRest = async (locator: Locator) => {
   let last = ''
   await expect
     .poll(async () => {

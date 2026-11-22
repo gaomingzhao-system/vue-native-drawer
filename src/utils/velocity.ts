@@ -14,21 +14,21 @@ export interface VelocityTracker {
 }
 
 /** Estimates how fast a pointer moves from its most recent positions. */
-export function createVelocityTracker(): VelocityTracker {
+export const createVelocityTracker = (): VelocityTracker => {
   const samples: { time: number; position: number }[] = []
 
   return {
-    reset() {
+    reset: () => {
       samples.length = 0
     },
-    add(time, position) {
+    add: (time, position) => {
       // A sample that did not move (such as the release) says nothing about the speed: the
       // pointer resting is noticed from the time since the last movement instead.
       if (samples.at(-1)?.position === position) return
       samples.push({ time, position })
       while (samples.length > 2 && time - samples[0]!.time > WINDOW) samples.shift()
     },
-    velocity(time) {
+    velocity: (time) => {
       const first = samples[0]
       const last = samples.at(-1)
       if (!first || !last || first === last || time - last.time > STALE) return 0

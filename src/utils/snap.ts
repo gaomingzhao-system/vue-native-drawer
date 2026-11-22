@@ -4,12 +4,11 @@ import type { SnapPoint } from '../types'
 /** Snap points closer than this (px) to a position count as reached. */
 const EPSILON = 0.5
 
-export function clamp(value: number, min: number, max: number): number {
-  return Math.min(Math.max(value, min), max)
-}
+export const clamp = (value: number, min: number, max: number): number =>
+  Math.min(Math.max(value, min), max)
 
 /** Visible size (px) of `point` for a drawer whose full size is `size`. */
-export function resolveSnapPoint(point: SnapPoint, size: number): number {
+export const resolveSnapPoint = (point: SnapPoint, size: number): number => {
   let visible: number
   if (typeof point === 'number') visible = point <= 1 ? point * size : point
   else if (point.endsWith('%')) visible = (Number.parseFloat(point) / 100) * size
@@ -21,15 +20,14 @@ export function resolveSnapPoint(point: SnapPoint, size: number): number {
  * Offsets of every snap point: how far (px) the drawer is moved towards its edge to rest there.
  * `0` is fully open, `size` is closed.
  */
-export function getSnapOffsets(points: readonly SnapPoint[], size: number): number[] {
-  return points.map((point) => size - resolveSnapPoint(point, size))
-}
+export const getSnapOffsets = (points: readonly SnapPoint[], size: number): number[] =>
+  points.map((point) => size - resolveSnapPoint(point, size))
 
 /** Index of `point` in `points`, or `-1`. Numbers are compared loosely so `1 / 3` matches `0.333…`. */
-export function findSnapIndex(
+export const findSnapIndex = (
   points: readonly SnapPoint[],
   point: SnapPoint | null | undefined,
-): number {
+): number => {
   if (point == null) return -1
   return points.findIndex(
     (candidate) =>
@@ -44,7 +42,7 @@ export function findSnapIndex(
  * Rubber banding as UIScrollView does it: an overdrag of `distance` px moves the drawer less and
  * less the further it goes, and never more than `limit` px.
  */
-export function rubberBand(distance: number, limit: number): number {
+export const rubberBand = (distance: number, limit: number): number => {
   if (distance <= 0 || limit <= 0) return 0
   return (1 - 1 / ((distance * RUBBER_BAND) / limit + 1)) * limit
 }
@@ -69,14 +67,14 @@ export type ReleaseTarget = { type: 'snap'; index: number } | { type: 'close' }
  * the nearest snap point wins, while a flick always moves on to the next snap point in its
  * direction, like iOS sheets.
  */
-export function getReleaseTarget({
+export const getReleaseTarget = ({
   offsets,
   closed,
   position,
   velocity,
   dismissible,
   closeThreshold = CLOSE_THRESHOLD,
-}: Release): ReleaseTarget {
+}: Release): ReleaseTarget => {
   const projected = position + velocity * MOMENTUM
   const lowest = Math.max(...offsets)
   const flick = Math.abs(velocity) > FLICK_VELOCITY
@@ -101,7 +99,7 @@ export function getReleaseTarget({
   return { type: 'snap', index }
 }
 
-function nearest(offsets: readonly number[], position: number): number {
+const nearest = (offsets: readonly number[], position: number): number => {
   let best = 0
   for (const [index, offset] of offsets.entries()) {
     if (Math.abs(offset - position) < Math.abs((offsets[best] ?? 0) - position)) best = index
@@ -110,7 +108,7 @@ function nearest(offsets: readonly number[], position: number): number {
 }
 
 /** Closest snap point past `position`: towards closed when `direction` is 1, else towards open. */
-function nextSnap(offsets: readonly number[], position: number, direction: 1 | -1): number {
+const nextSnap = (offsets: readonly number[], position: number, direction: 1 | -1): number => {
   let best = -1
   for (const [index, offset] of offsets.entries()) {
     const ahead = direction > 0 ? offset > position + EPSILON : offset < position - EPSILON

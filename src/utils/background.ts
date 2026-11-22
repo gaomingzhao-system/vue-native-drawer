@@ -13,14 +13,14 @@ export interface BackgroundScale {
 }
 
 /** Pushes the page back behind a drawer like a stack of iOS cards. */
-export function createBackgroundScale(): BackgroundScale {
+export const createBackgroundScale = (): BackgroundScale => {
   let element: HTMLElement | null = null
   let direction: DrawerDirection = 'bottom'
   let inset = '0px'
   const saved: Partial<Record<(typeof PROPERTIES)[number], string>> = {}
 
   return {
-    activate(selector, from) {
+    activate: (selector, from) => {
       element = document.querySelector<HTMLElement>(selector)
       if (!element) return
       direction = from
@@ -48,7 +48,7 @@ export function createBackgroundScale(): BackgroundScale {
       document.documentElement.setAttribute('data-vnd-scaled', '')
     },
 
-    render(progress, transition) {
+    render: (progress, transition) => {
       if (!element) return
       const vertical = direction === 'top' || direction === 'bottom'
       const scale =
@@ -70,7 +70,7 @@ export function createBackgroundScale(): BackgroundScale {
       element.style.clipPath = `inset(${inset} round ${BACKGROUND_RADIUS * progress}px)`
     },
 
-    deactivate() {
+    deactivate: () => {
       if (element) {
         for (const property of PROPERTIES) element.style[property] = saved[property] ?? ''
       }

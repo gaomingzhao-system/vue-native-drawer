@@ -1,15 +1,15 @@
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Drawer } from '../../../src'
 import { state } from './state'
 
 const nestedOpen = ref(false)
 
-function onOpen(value: boolean) {
+const onOpen = (value: boolean) => {
   if (!state.keepOpen) state.open = value
 }
 
-function onDrag(progress: number) {
+const onDrag = (progress: number) => {
   state.progress.push(progress)
 }
 </script>

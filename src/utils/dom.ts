@@ -13,7 +13,7 @@ const FOCUSABLE = [
 ].join(',')
 
 /** Translation of `element` along one axis, as currently rendered (mid-transition included). */
-export function readTranslate(element: HTMLElement, vertical: boolean): number {
+export const readTranslate = (element: HTMLElement, vertical: boolean): number => {
   const { transform } = getComputedStyle(element)
   if (!transform || transform === 'none') return 0
   const matrix = new DOMMatrixReadOnly(transform)
@@ -21,11 +21,11 @@ export function readTranslate(element: HTMLElement, vertical: boolean): number {
 }
 
 /** Nearest ancestor of `target`, below `boundary`, that scrolls along the given axis. */
-export function findScrollable(
+export const findScrollable = (
   target: Element,
   boundary: Element,
   vertical: boolean,
-): HTMLElement | null {
+): HTMLElement | null => {
   for (let element: Element | null = target; element && element !== boundary;) {
     if (element instanceof HTMLElement && isScrollable(element, vertical)) return element
     element = element.parentElement
@@ -33,7 +33,7 @@ export function findScrollable(
   return null
 }
 
-function isScrollable(element: HTMLElement, vertical: boolean): boolean {
+const isScrollable = (element: HTMLElement, vertical: boolean): boolean => {
   const style = getComputedStyle(element)
   const overflow = vertical ? style.overflowY : style.overflowX
   if (overflow !== 'auto' && overflow !== 'scroll') return false
@@ -46,7 +46,11 @@ function isScrollable(element: HTMLElement, vertical: boolean): boolean {
  * Whether `element` can still scroll when a finger moves along the axis: content scrolls back
  * towards its start when `towardStart` (the finger moves down or right), else towards its end.
  */
-export function canScroll(element: HTMLElement, vertical: boolean, towardStart: boolean): boolean {
+export const canScroll = (
+  element: HTMLElement,
+  vertical: boolean,
+  towardStart: boolean,
+): boolean => {
   const position = Math.abs(vertical ? element.scrollTop : element.scrollLeft)
   const max = vertical
     ? element.scrollHeight - element.clientHeight
@@ -55,8 +59,10 @@ export function canScroll(element: HTMLElement, vertical: boolean, towardStart: 
 }
 
 /** Elements inside `container` that can receive keyboard focus, in tab order. */
-export function getFocusable(container: HTMLElement): HTMLElement[] {
-  return [...container.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
-    (element) => element.getClientRects().length > 0 && !element.closest('[inert]'),
+export const getFocusable = (container: HTMLElement): HTMLElement[] =>
+  [...container.querySelectorAll<HTMLElement>(FOCUSABLE)].filter(
+    (element) =>
+      (!element.hasAttribute('tabindex') || element.tabIndex >= 0) &&
+      element.getClientRects().length > 0 &&
+      !element.closest('[inert]'),
   )
-}

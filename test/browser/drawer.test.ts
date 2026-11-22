@@ -1,6 +1,6 @@
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { userEvent } from 'vitest/browser'
-import { createApp, h, nextTick, ref, vaporInteropPlugin } from 'vue'
+import { createApp, h, nextTick, ref } from 'vue'
 import { Drawer, type DrawerProps } from '../../src'
 import { state } from './fixtures/state'
 import {
@@ -15,16 +15,14 @@ import {
   visibleShare,
 } from './helpers'
 
-async function open(props: DrawerProps = {}) {
+const open = async (props: DrawerProps = {}) => {
   state.props = props
   state.open = true
   await expect.poll(() => state.events).toContain('opened')
   return getPanel()!
 }
 
-async function closed() {
-  await expect.poll(() => state.events).toContain('closed')
-}
+const closed = () => expect.poll(() => state.events).toContain('closed')
 
 /** Release slowly: the pointer rests long enough to drop its velocity. */
 const slowly = { steps: 12, hold: 80 }
@@ -325,14 +323,17 @@ describe('page integration', () => {
 
   it('keeps Tab inside the drawer', async () => {
     const panel = await open()
+    const handle = panel.querySelector('.vnd-handle')
     const close = panel.querySelector('[data-testid="inner-close"]')
     const input = panel.querySelector('[data-testid="input"]')
+    await userEvent.tab()
+    expect(document.activeElement).toBe(handle)
     await userEvent.tab()
     expect(document.activeElement).toBe(close)
     await userEvent.tab()
     expect(document.activeElement).toBe(input)
     await userEvent.tab()
-    expect(document.activeElement).toBe(close)
+    expect(document.activeElement).toBe(handle)
     await userEvent.tab({ shift: true })
     expect(document.activeElement).toBe(input)
   })
@@ -432,25 +433,24 @@ describe('animation', () => {
   })
 })
 
-describe('VDOM interop', () => {
-  it('renders inside a VDOM app with vaporInteropPlugin', async () => {
+describe('Vue application integration', () => {
+  it('renders in a regular app without an interoperability plugin', async () => {
     const shown = ref(true)
     const host = document.createElement('div')
     document.body.append(host)
     const app = createApp({
       render: () =>
         h(
-          Drawer as never,
+          Drawer,
           {
             open: shown.value,
             'onUpdate:open': (value: boolean) => (shown.value = value),
-            title: 'Interop',
+            title: 'Regular Vue app',
             'data-testid': 'vdom',
           },
           { default: () => h('p', { class: 'vdom-content' }, 'Hello from a VDOM app') },
         ),
     })
-    app.use(vaporInteropPlugin)
     app.mount(host)
     await nextTick()
     await expect.poll(() => getPanel('vdom')).not.toBeNull()

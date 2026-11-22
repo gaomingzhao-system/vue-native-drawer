@@ -1,4 +1,4 @@
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Drawer, type SnapPoint } from 'vue-native-drawer'
 import DemoCard from '../components/DemoCard.vue'
@@ -7,7 +7,7 @@ const open = ref(false)
 const snap = ref<SnapPoint>(1 / 2)
 const name = ref('Taylor')
 
-function show() {
+const show = () => {
   snap.value = 1
   open.value = true
 }

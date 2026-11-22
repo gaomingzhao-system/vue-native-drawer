@@ -1,4 +1,4 @@
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import { ref } from 'vue'
 import { Drawer } from 'vue-native-drawer'
 import DemoCard from '../components/DemoCard.vue'

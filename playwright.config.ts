@@ -22,6 +22,14 @@ export default defineConfig({
       name: 'desktop',
       use: { ...devices['Desktop Chrome'], launchOptions: { executablePath } },
     },
+    {
+      name: 'firefox',
+      use: { ...devices['Desktop Firefox'] },
+    },
+    {
+      name: 'webkit',
+      use: { ...devices['Desktop Safari'] },
+    },
   ],
   webServer: {
     command: `npm run dev -- --port ${port} --strictPort`,

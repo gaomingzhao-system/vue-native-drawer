@@ -1,5 +1,5 @@
-<script setup vapor lang="ts">
-import { computed, useAttrs, useId, useTemplateRef } from 'vue'
+<script setup lang="ts">
+import { computed, normalizeStyle, useAttrs, useId, useTemplateRef, type CSSProperties } from 'vue'
 import { useDrawer } from './composables/useDrawer'
 import { CLOSE_THRESHOLD, DEFAULT_SNAP_POINTS } from './constants'
 import type { DrawerExposed, DrawerProps, DrawerSlotProps, SnapPoint } from './types'
@@ -45,13 +45,22 @@ const slots = defineSlots<{
 const attrs = useAttrs()
 const id = useId()
 
+// The overlay is a sibling, so it cannot inherit custom properties from the panel.
+// Read attrs during rendering: useAttrs() is updated by Vue but is not reactive.
+const overlayStyle = () => {
+  const style = normalizeStyle([attrs.style]) as CSSProperties | undefined
+  return {
+    '--vnd-overlay-color': style?.['--vnd-overlay-color'],
+    '--vnd-z-index': style?.['--vnd-z-index'],
+  }
+}
+
 const vertical = computed(() => props.direction === 'top' || props.direction === 'bottom')
 const snapPoints = computed<readonly SnapPoint[]>(() => {
   if (props.snapPoints?.length) return props.snapPoints
   return props.fit || !vertical.value ? [1] : DEFAULT_SNAP_POINTS
 })
 const showHandle = computed(() => props.handle ?? vertical.value)
-const hasHeader = computed(() => !!(slots.header || props.title || props.description))
 
 const {
   mounted,
@@ -102,20 +111,21 @@ defineExpose<DrawerExposed>({ show, close, snapTo })
       ref="overlay"
       class="vnd-overlay"
       aria-hidden="true"
+      :style="overlayStyle()"
       :data-state="visible ? 'open' : 'closed'"
       @click="onOverlayClick"
     />
     <div
       v-if="mounted"
       ref="panel"
-      v-bind="attrs"
       class="vnd-drawer"
       role="dialog"
       tabindex="-1"
       data-vnd-drawer=""
       :aria-modal="modal || undefined"
-      :aria-labelledby="title ? `${id}-title` : undefined"
+      :aria-labelledby="title && !attrs['aria-label'] ? `${id}-title` : undefined"
       :aria-describedby="description ? `${id}-description` : undefined"
+      v-bind="attrs"
       :data-direction="direction"
       :data-state="visible ? 'open' : 'closed'"
       :data-expanded="expanded || undefined"
@@ -123,11 +133,29 @@ defineExpose<DrawerExposed>({ show, close, snapTo })
       :data-fit="fit || undefined"
       @pointerdown="onPointerDown"
     >
-      <div v-if="showHandle" class="vnd-handle" aria-hidden="true" @click="onHandleClick" />
-      <div v-if="hasHeader" class="vnd-header">
+      <button
+        v-if="showHandle"
+        type="button"
+        class="vnd-handle"
+        aria-label="Change drawer size"
+        :aria-disabled="snapPoints.length < 2 || undefined"
+        :tabindex="snapPoints.length > 1 ? 0 : -1"
+        @click="onHandleClick"
+      />
+      <div v-if="slots.header || title || description" class="vnd-header">
+        <template v-if="slots.header">
+          <span v-if="title" :id="`${id}-title`" hidden>{{ title }}</span>
+          <span v-if="description" :id="`${id}-description`" hidden>{{ description }}</span>
+        </template>
         <slot name="header" v-bind="slotProps">
-          <h2 v-if="title" :id="`${id}-title`" class="vnd-title">{{ title }}</h2>
-          <p v-if="description" :id="`${id}-description`" class="vnd-description">
+          <h2 v-if="title" :id="slots.header ? undefined : `${id}-title`" class="vnd-title">
+            {{ title }}
+          </h2>
+          <p
+            v-if="description"
+            :id="slots.header ? undefined : `${id}-description`"
+            class="vnd-description"
+          >
             {{ description }}
           </p>
         </slot>
