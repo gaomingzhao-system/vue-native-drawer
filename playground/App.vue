@@ -1,4 +1,4 @@
-<script setup vapor lang="ts">
+<script setup lang="ts">
 import DirectionsDemo from './demos/DirectionsDemo.vue'
 import FadeDemo from './demos/FadeDemo.vue'
 import FitDemo from './demos/FitDemo.vue'
@@ -12,7 +12,7 @@ import SnapPointsDemo from './demos/SnapPointsDemo.vue'
 <template>
   <main class="page">
     <header class="hero">
-      <span class="eyebrow">Vue 3.6 · Vapor mode</span>
+      <span class="eyebrow">Vue 3.5</span>
       <h1>vue-native-drawer</h1>
       <p>
         A drawer that moves like an iOS sheet: snap points, momentum, rubber banding and the card
@@ -34,7 +34,7 @@ import SnapPointsDemo from './demos/SnapPointsDemo.vue'
 
     <footer class="credits">
       <a href="https://github.com/gaomingzhao-system/vue-native-drawer">GitHub</a>
-      · Built with Vue Vapor, VueUse and plain CSS.
+      · Built with Vue 3.5, VueUse and plain CSS.
     </footer>
   </main>
 </template>

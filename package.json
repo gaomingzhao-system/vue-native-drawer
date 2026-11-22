@@ -1,7 +1,7 @@
 {
   "name": "vue-native-drawer",
   "version": "0.1.0",
-  "description": "A native iOS-style drawer (bottom sheet) for Vue 3.6 Vapor mode, with snap points and momentum gestures.",
+  "description": "A native iOS-style drawer (bottom sheet) for Vue 3, with snap points and momentum gestures.",
   "keywords": [
     "bottom-sheet",
     "drawer",
@@ -9,7 +9,6 @@
     "ios",
     "sheet",
     "snap-points",
-    "vapor",
     "vue"
   ],
   "homepage": "https://github.com/gaomingzhao-system/vue-native-drawer#readme",
@@ -52,36 +51,29 @@
     "test:unit": "vitest run --project unit",
     "test:browser": "vitest run --project browser",
     "test:e2e": "playwright test",
+    "benchmark": "node scripts/benchmark.mjs",
     "check": "npm run lint && npm run format:check && npm run typecheck && npm test && npm run build"
   },
   "dependencies": {
     "@vueuse/core": "^15.0.0"
   },
   "devDependencies": {
-    "@playwright/test": "^1.64.1",
+    "@playwright/test": "^1.65.1",
     "@types/node": "^24.19.2",
     "@typescript/typescript6": "^6.0.2",
-    "@vitejs/plugin-vue": "^6.0.10",
-    "@vitest/browser-playwright": "^5.0.5",
-    "oxfmt": "^0.75.0",
-    "oxlint": "^1.90.0",
-    "playwright": "^1.64.1",
+    "@vitejs/plugin-vue": "^6.0.11",
+    "@vitest/browser-playwright": "^5.1.1",
+    "oxfmt": "^0.79.0",
+    "oxlint": "^1.94.0",
+    "playwright": "^1.65.1",
     "typescript": "^7.0.2",
-    "vite": "^8.3.5",
-    "vitest": "^5.0.5",
-    "vue": "^3.6.0-rc.13",
-    "vue-tsc": "^3.3.13"
+    "vite": "^8.3.8",
+    "vitest": "^5.1.1",
+    "vue": "3.5.46",
+    "vue-tsc": "^3.3.14"
   },
   "peerDependencies": {
-    "vue": "^3.6.0-rc.13"
-  },
-  "overrides": {
-    "@vueuse/core": {
-      "vue": "$vue"
-    },
-    "@vueuse/shared": {
-      "vue": "$vue"
-    }
+    "vue": "^3.5.0"
   },
   "devEngines": {
     "packageManager": {

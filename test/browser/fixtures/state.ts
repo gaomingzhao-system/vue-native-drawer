@@ -16,7 +16,7 @@ export const state = reactive({
   progress: [] as number[],
 })
 
-export function resetState() {
+export const resetState = () => {
   Object.assign(state, {
     open: false,
     snap: undefined,

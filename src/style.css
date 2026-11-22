@@ -1,7 +1,10 @@
 /*
  * vue-native-drawer
  *
- * Theme it with these custom properties (set them on `.vnd-drawer` or any ancestor):
+ * Set panel properties on `.vnd-drawer` or an ancestor of its Teleport target.
+ * The overlay is a sibling: set its color on `.vnd-overlay` and shared z-index on both,
+ * or use a shared ancestor such as `:root`. Inline overlay color/z-index passed to
+ * <Drawer style="…"> are forwarded to the overlay. Set backdrop color on `:root`.
  *
  *   --vnd-background        drawer background
  *   --vnd-color             drawer text color
@@ -147,14 +150,28 @@
 /* Handle */
 
 .vnd-handle {
+  appearance: none;
   position: relative;
   display: flex;
   flex: none;
   align-items: center;
   justify-content: center;
+  box-sizing: border-box;
   height: 1.25rem;
+  margin: 0;
+  padding: 0;
+  border: 0;
+  background: none;
+  color: inherit;
+  font: inherit;
   cursor: grab;
   touch-action: none;
+}
+
+.vnd-handle:focus-visible {
+  outline: 2px solid currentColor;
+  outline-offset: -2px;
+  border-radius: var(--vnd-radius, 12px);
 }
 
 .vnd-handle::before {

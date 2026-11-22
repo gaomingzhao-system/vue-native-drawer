@@ -1,5 +1,5 @@
-import { cdp } from 'vitest/browser'
-import { createVaporApp, nextTick, type App } from 'vue'
+import { commands } from 'vitest/browser'
+import { createApp, nextTick, type App } from 'vue'
 import Harness from './fixtures/Harness.vue'
 import { resetState } from './fixtures/state'
 
@@ -8,16 +8,16 @@ let host: HTMLElement | undefined
 
 export const sleep = (ms: number) => new Promise((resolve) => setTimeout(resolve, ms))
 
-/** Render the harness in a Vapor app. */
-export async function mountHarness() {
+/** Render the harness in a regular Vue app. */
+export const mountHarness = async () => {
   host = document.createElement('div')
   document.body.append(host)
-  app = createVaporApp(Harness)
+  app = createApp(Harness)
   app.mount(host)
   await nextTick()
 }
 
-export function unmountHarness() {
+export const unmountHarness = () => {
   app?.unmount()
   host?.remove()
   app = undefined
@@ -25,11 +25,7 @@ export function unmountHarness() {
   resetState()
 }
 
-export async function setReducedMotion(reduce: boolean) {
-  await cdp().send('Emulation.setEmulatedMedia', {
-    features: [{ name: 'prefers-reduced-motion', value: reduce ? 'reduce' : 'no-preference' }],
-  })
-}
+export const setReducedMotion = (reduce: boolean) => commands.setReducedMotion(reduce)
 
 export const getPanel = (id = 'drawer') =>
   document.querySelector<HTMLElement>(`[data-testid="${id}"]`)
@@ -37,7 +33,7 @@ export const getPanel = (id = 'drawer') =>
 export const getOverlay = () => document.querySelector<HTMLElement>('.vnd-overlay')
 
 /** Visible share of a bottom drawer, from 0 to 1. */
-export function visibleShare(id = 'drawer'): number {
+export const visibleShare = (id = 'drawer'): number => {
   const panel = getPanel(id)
   if (!panel) return 0
   const rect = panel.getBoundingClientRect()
@@ -45,7 +41,7 @@ export function visibleShare(id = 'drawer'): number {
 }
 
 /** Wait until the drawer stops moving. */
-export async function settle(id = 'drawer') {
+export const settle = async (id = 'drawer') => {
   let last = Number.NaN
   for (let i = 0; i < 100; i++) {
     await sleep(32)
@@ -67,7 +63,7 @@ interface DragOptions {
 }
 
 /** Drag the pointer from a point of `element` by `dx`, `dy` and release it. */
-export async function drag(element: Element, dx: number, dy: number, options: DragOptions = {}) {
+export const drag = async (element: Element, dx: number, dy: number, options: DragOptions = {}) => {
   const { steps = 10, interval = 16, hold = 0, pointerType = 'touch' } = options
   const rect = element.getBoundingClientRect()
   const x = rect.left + (options.from?.x ?? rect.width / 2)

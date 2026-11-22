@@ -3,9 +3,8 @@ import { DURATION, EASE } from '../constants'
 const round = (value: number) => Math.round(value * 1000) / 1000
 
 /** CSS `cubic-bezier()` of four control values. */
-export function cubicBezier(points: readonly number[]): string {
-  return `cubic-bezier(${points.map(round).join(', ')})`
-}
+export const cubicBezier = (points: readonly number[]): string =>
+  `cubic-bezier(${points.map(round).join(', ')})`
 
 /** The default drawer easing. */
 export const EASING = cubicBezier(EASE)
@@ -15,7 +14,11 @@ export const EASING = cubicBezier(EASE)
  * speed the finger released it with instead of jumping to the speed built into the curve.
  * `distance` (px) is how far the animation travels.
  */
-export function easingForVelocity(velocity: number, distance: number, duration = DURATION): string {
+export const easingForVelocity = (
+  velocity: number,
+  distance: number,
+  duration = DURATION,
+): string => {
   const [x1, y1, x2, y2] = EASE
   if (velocity <= 0 || distance <= 0) return EASING
   // Initial slope of the curve needed to start at `velocity`.
