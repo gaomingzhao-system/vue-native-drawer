@@ -95,20 +95,33 @@ test.describe('presentation', () => {
 
   test('slides in from every edge', async ({ page }) => {
     const left = await openDemo(page, 'open-left', 'drawer-left')
-    expect((await left.boundingBox())!.x).toBeCloseTo(0, 0)
-    await drag(page, left, -200, 0, { ...slowly, from: { x: 150, y: 300 } })
+    const leftBox = (await left.boundingBox())!
+    expect(leftBox.x).toBeCloseTo(0, 0)
+    // Keep the release inside the viewport: Firefox does not deliver an outside mouseup.
+    // Half of the drawer's size still exceeds its 25% dismissal threshold.
+    await drag(page, left, -leftBox.width / 2, 0, {
+      ...slowly,
+      from: { x: leftBox.width * 0.75, y: leftBox.height / 2 },
+    })
     await expect(left).toHaveCount(0)
 
     const right = await openDemo(page, 'open-right', 'drawer-right')
     const viewport = page.viewportSize()!
     const box = (await right.boundingBox())!
     expect(box.x + box.width).toBeCloseTo(viewport.width, 0)
-    await drag(page, right, 200, 0, { ...slowly, from: { x: 100, y: 300 } })
+    await drag(page, right, box.width / 2, 0, {
+      ...slowly,
+      from: { x: box.width / 4, y: box.height / 2 },
+    })
     await expect(right).toHaveCount(0)
 
     const top = await openDemo(page, 'open-top', 'drawer-top')
-    expect((await top.boundingBox())!.y).toBeCloseTo(0, 0)
-    await drag(page, top, 0, -150, { ...slowly, from: { x: 150, y: 40 } })
+    const topBox = (await top.boundingBox())!
+    expect(topBox.y).toBeCloseTo(0, 0)
+    await drag(page, top, 0, -topBox.height / 2, {
+      ...slowly,
+      from: { x: topBox.width / 2, y: topBox.height * 0.75 },
+    })
     await expect(top).toHaveCount(0)
   })
 

@@ -32,7 +32,15 @@ const instrument = (batch) => ({
   name: 'drawer-benchmark',
   enforce: 'pre',
   transform: (code, id) => {
-    if (!id.endsWith('/src/composables/useDrawer.ts')) return
+    const drawer = id.endsWith('/src/composables/useDrawer.ts')
+    if (!drawer && !id.endsWith('/src/utils/background.ts')) return
+    // CSSStyleDeclaration exposes named properties differently across browser versions.
+    // Count the actual source assignments instead of replacing browser-specific setters.
+    code = code.replace(
+      /^(\s*)(\w+\.style\.(?:transform|transition|opacity|clipPath)\s*=)/gm,
+      '$1if (window.drawerBenchmarkMetrics) window.drawerBenchmarkMetrics.styleWrites++\n$1$2',
+    )
+    if (!drawer) return code
     const start = code.indexOf('    position = offset\n')
     const end = code.indexOf('\n  }', start)
     if (start < 0 || end < 0) throw new Error('Cannot locate the drawer render body')
@@ -134,9 +142,6 @@ const measureDrag = async (page) =>
     observe(Element.prototype, 'getBoundingClientRect', 'value', () => metrics.geometryReads++)
     for (const property of ['offsetWidth', 'offsetHeight', 'offsetTop']) {
       observe(HTMLElement.prototype, property, 'get', () => metrics.geometryReads++)
-    }
-    for (const property of ['transform', 'transition', 'opacity', 'clipPath']) {
-      observe(CSSStyleDeclaration.prototype, property, 'set', () => metrics.styleWrites++)
     }
     const frameIntervals = []
     const dispatchTimes = []
